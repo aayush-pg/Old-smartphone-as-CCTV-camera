@@ -17,7 +17,7 @@ def create_app():
 
     @app.route("/")
     def home():
-        return "Backend Running!"
+        return "Hello World"
 
     return app
 
