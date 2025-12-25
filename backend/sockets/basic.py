@@ -11,6 +11,7 @@ Concepts:
 """
 
 from flask_socketio import SocketIO, emit
+from flask import request
 
 # SocketIO instance को बाहर से initialize किया जाएगा
 socketio = None
@@ -37,7 +38,8 @@ def register_basic_events(socketio_instance):
         """
         जब कोई client connect होता है, यह function automatically call होता है
         """
-        print("[SUCCESS] Client connected! Socket ID:", socketio_instance.server.eio.sid)
+        socket_id = request.sid
+        print(f"[SUCCESS] Client connected! Socket ID: {socket_id}")
         # Client को confirmation भेजते हैं
         emit('connected', {'message': 'Server se connect ho gaya!', 'status': 'ok'})
     
@@ -46,8 +48,9 @@ def register_basic_events(socketio_instance):
         """
         जब कोई client disconnect होता है, यह function automatically call होता है
         """
-        print("[INFO] Client disconnected!")
-        emit('disconnected', {'message': 'Client disconnect ho gaya', 'status': 'ok'})
+        socket_id = request.sid
+        print(f"[INFO] Client disconnected! Socket ID: {socket_id}")
+        # Note: Cannot emit after disconnect as connection is already closed
     
     @socketio_instance.on('ping')
     def handle_ping(data):
