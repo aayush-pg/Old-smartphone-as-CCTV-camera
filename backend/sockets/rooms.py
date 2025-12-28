@@ -48,6 +48,18 @@ def register_room_events(socketio_instance):
                 })
                 return
             
+            # Special validation for camera devices
+            if device_type == 'camera':
+                # Check if room exists (dashboard must create room first)
+                if room_code not in rooms or len(rooms[room_code]) == 0:
+                    emit('join_room_error', {
+                        'message': 'Room not found! Please check the code.',
+                        'status': 'error'
+                    })
+                    return
+                
+                print(f"[INFO] Camera trying to join existing room {room_code} with {len(rooms[room_code])} clients")
+            
             # Room में join करते हैं
             join_room(room_code)
             
