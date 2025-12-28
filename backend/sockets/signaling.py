@@ -52,11 +52,11 @@ def register_signaling_events(socketio_instance):
             # 3. वरना, sender को छोड़कर सभी connected clients को भेजो
             
             if room_code:
-                # Room-based forwarding
                 socketio_instance.emit('offer', {
                     'offer': offer_data,
+                    'room_code': room_code,
                     'from_socket_id': socket_id
-                }, room=room_code, skip_sid=socket_id)  # skip_sid: sender को message नहीं भेजेगा
+                }, room=room_code, skip_sid=socket_id)
                 print(f"📨 Offer forwarded to room {room_code}")
                 
             elif target_socket_id:
@@ -120,6 +120,7 @@ def register_signaling_events(socketio_instance):
             if room_code:
                 socketio_instance.emit('answer', {
                     'answer': answer_data,
+                    'room_code': room_code,
                     'from_socket_id': socket_id
                 }, room=room_code, skip_sid=socket_id)
                 print(f"[INFO] Answer forwarded to room {room_code}")
@@ -151,7 +152,7 @@ def register_signaling_events(socketio_instance):
                 'status': 'error'
             })
     
-    @socketio_instance.on('ice-candidate')
+    @socketio_instance.on('ice_candidate')
     def handle_ice_candidate(data):
         """
         ICE Candidate message handle करता है
@@ -181,21 +182,22 @@ def register_signaling_events(socketio_instance):
             
             # Forward करते हैं
             if room_code:
-                socketio_instance.emit('ice-candidate', {
+                socketio_instance.emit('ice_candidate', {
                     'candidate': candidate_data,
+                    'room_code': room_code,
                     'from_socket_id': socket_id
                 }, room=room_code, skip_sid=socket_id)
                 print(f"[INFO] ICE candidate forwarded to room {room_code}")
                 
             elif target_socket_id:
-                socketio_instance.emit('ice-candidate', {
+                socketio_instance.emit('ice_candidate', {
                     'candidate': candidate_data,
                     'from_socket_id': socket_id
                 }, room=target_socket_id)
                 print(f"[INFO] ICE candidate forwarded to specific client {target_socket_id}")
                 
             else:
-                socketio_instance.emit('ice-candidate', {
+                socketio_instance.emit('ice_candidate', {
                     'candidate': candidate_data,
                     'from_socket_id': socket_id
                 }, skip_sid=socket_id)

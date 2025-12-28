@@ -1,3 +1,11 @@
+import sys
+import os
+
+# Add user site-packages to path
+user_site = os.path.expanduser('~\\AppData\\Roaming\\Python\\Python314\\site-packages')
+if user_site not in sys.path:
+    sys.path.insert(0, user_site)
+
 from flask import Flask, render_template
 from flask_cors import CORS
 from routes.auth import auth_bp
@@ -56,5 +64,24 @@ def create_app():
 
 if __name__ == "__main__":
     app, socketio = create_app()
-    # Use socketio.run() instead of app.run() for Socket.IO support
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True, allow_unsafe_werkzeug=True)
+    
+    # HTTPS Configuration
+    import os
+    cert_file = "cert.pem"
+    key_file = "key.pem"
+    
+    if os.path.exists(cert_file) and os.path.exists(key_file):
+        print("🔒 Starting HTTPS server...")
+        # Use socketio.run() with SSL context for HTTPS
+        socketio.run(
+            app, 
+            host="0.0.0.0", 
+            port=5000, 
+            debug=True, 
+            allow_unsafe_werkzeug=True,
+            ssl_context=(cert_file, key_file)
+        )
+    else:
+        print("⚠️ SSL certificates not found, starting HTTP server...")
+        print("Run 'python generate_cert.py' to generate SSL certificates")
+        socketio.run(app, host="0.0.0.0", port=5000, debug=True, allow_unsafe_werkzeug=True)
