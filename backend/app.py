@@ -3,6 +3,7 @@ import os
 from flask import Flask, render_template, request
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room
+from get_ip import get_local_ip
 
 # Setup Paths
 user_site = os.path.expanduser('~\\AppData\\Roaming\\Python\\Python314\\site-packages')
@@ -14,6 +15,10 @@ from routes.login import login_bp
 from routes.code import code_bp
 import config
 
+# Get dynamic IP
+LOCAL_IP = get_local_ip()
+print(f"🌐 Server will run on IP: {LOCAL_IP}")
+
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config.from_object(config.Config)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -24,7 +29,16 @@ app.register_blueprint(code_bp, url_prefix="/api/code")
 app.register_blueprint(login_bp)
 
 @app.route("/")
-def home(): return "✅ FINAL BACKEND RUNNING"
+def home(): return f"✅ BACKEND RUNNING ON {LOCAL_IP}:5001"
+
+@app.route("/api/config")
+def get_config():
+    """API endpoint to get current server IP"""
+    return {
+        "backend_url": f"https://{LOCAL_IP}:5001",
+        "socket_url": f"https://{LOCAL_IP}:5001",
+        "ip": LOCAL_IP
+    }
 
 # ⚡ FORCE 100MB LIMIT & ALLOW ALL CONNECTIONS
 socketio = SocketIO(app, cors_allowed_origins="*", max_http_buffer_size=100*1024*1024)
@@ -71,6 +85,8 @@ def on_ice_candidate(data):
 if __name__ == "__main__":
     import os
     if os.path.exists("cert.pem"):
-        socketio.run(app, host="0.0.0.0", port=5000, debug=True, allow_unsafe_werkzeug=True, ssl_context=("cert.pem", "key.pem"))
+        print(f"🔒 Starting HTTPS server on {LOCAL_IP}:5001")
+        socketio.run(app, host="0.0.0.0", port=5001, debug=True, allow_unsafe_werkzeug=True, ssl_context=("cert.pem", "key.pem"))
     else:
-        socketio.run(app, host="0.0.0.0", port=5000, debug=True, allow_unsafe_werkzeug=True)
+        print(f"🌐 Starting HTTP server on {LOCAL_IP}:5001")
+        socketio.run(app, host="0.0.0.0", port=5001, debug=True, allow_unsafe_werkzeug=True)
