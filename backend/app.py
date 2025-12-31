@@ -18,6 +18,7 @@ import config
 from sockets.basic import init_socketio, register_basic_events
 from sockets.rooms import register_room_events
 from sockets.signaling import register_signaling_events
+from sockets.fallback import register_fallback_events
 
 def create_app():
     app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -56,6 +57,7 @@ def create_app():
     register_basic_events(socketio)
     register_room_events(socketio)
     register_signaling_events(socketio)
+    register_fallback_events(socketio)
     
     print("Socket.IO initialized and all events registered!")
     print("WebSocket server ready on ws://localhost:5000")
