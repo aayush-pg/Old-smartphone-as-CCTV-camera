@@ -27,10 +27,16 @@ def register_signaling_events(socketio):
             print(f"✅ Forwarding ANSWER to room: {room}")
             emit("answer", data, room=room, include_self=False)
 
-    # 3. Handle ICE Candidates
+    # 3. Handle ICE Candidates (support both naming conventions)
     @socketio.on("ice-candidate")
     def on_ice_candidate(data):
-        # We comment this out to keep logs clean, but it works same way
+        room = data.get("room_code") or data.get("room")
+        if room:
+            emit("ice-candidate", data, room=room, include_self=False)
+    
+    # Legacy support for old naming
+    @socketio.on("ice_candidate")
+    def on_ice_candidate_legacy(data):
         room = data.get("room_code") or data.get("room")
         if room:
             emit("ice-candidate", data, room=room, include_self=False)
