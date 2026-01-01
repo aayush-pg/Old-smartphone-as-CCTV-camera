@@ -15,7 +15,7 @@ from routes.login import login_bp
 from routes.code import code_bp
 import config
 
-# Socket.IO imports
+# Socket.IO imports - restored for proper room management
 from sockets.basic import init_socketio, register_basic_events
 from sockets.rooms import register_room_events
 from sockets.signaling import register_signaling_events
@@ -57,17 +57,17 @@ def test_page():
 def socket_test_page():
     return render_template("socket_test.html")
 
-# Initialize Socket.IO
+# Initialize Socket.IO with proper event handlers
 socketio = init_socketio(app)
 
-# Register all Socket.IO events
+# Register all Socket.IO events for proper room management
 register_basic_events(socketio)
 register_room_events(socketio)
 register_signaling_events(socketio)
 register_fallback_events(socketio)
 
-print("✅ Socket.IO initialized and all events registered!")
-print("🔌 WebSocket server ready!")
+print("✅ Socket.IO initialized with complete event handlers!")
+print("🔌 WebSocket server ready with room management!")
 
 @socketio.on('connect')
 def handle_connect():

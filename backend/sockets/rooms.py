@@ -36,9 +36,11 @@ def register_room_events(socketio_instance):
         """
         try:
             # Data extract करते हैं
-            room_code = data.get('code', '').strip()
+            room_code = str(data.get('code', '')).strip()  # Force string conversion
             device_type = data.get('type', 'viewer')  # Default: viewer
             socket_id = request.sid  # Current client का socket ID
+            
+            print(f"[DEBUG] Join room request: code='{room_code}' (type: {type(room_code)}), device_type='{device_type}', socket_id='{socket_id}'")
             
             # Validation: Code 6 digits होना चाहिए
             if not room_code or len(room_code) != 6 or not room_code.isdigit():
@@ -52,13 +54,12 @@ def register_room_events(socketio_instance):
             if device_type == 'camera':
                 # Check if room exists (dashboard must create room first)
                 if room_code not in rooms or len(rooms[room_code]) == 0:
-                    emit('join_room_error', {
-                        'message': 'Room not found! Please check the code.',
-                        'status': 'error'
-                    })
-                    return
+                    print(f"[WARNING] Camera trying to join non-existent room {room_code}")
+                    # Instead of error, create the room and wait for dashboard
+                    # This handles timing issues where camera connects before dashboard
+                    print(f"[INFO] Creating room {room_code} for camera (dashboard will join later)")
                 
-                print(f"[INFO] Camera trying to join existing room {room_code} with {len(rooms[room_code])} clients")
+                print(f"[INFO] Camera trying to join room {room_code} with {len(rooms.get(room_code, []))} clients")
             
             # Room में join करते हैं
             join_room(room_code)
