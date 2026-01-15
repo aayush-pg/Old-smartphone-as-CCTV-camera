@@ -17,12 +17,37 @@ def generate_self_signed_cert():
         key_size=2048,
     )
 
-    # Get local IP address
+    # Get local IP address and hostname
     import socket
     hostname = socket.gethostname()
-    local_ip = socket.gethostbyname(hostname)
     
-    print(f"Generating certificate for: {local_ip}")
+    # Try multiple methods to get IP addresses
+    local_ips = []
+    try:
+        # Method 1: Connect to external server
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        primary_ip = s.getsockname()[0]
+        local_ips.append(primary_ip)
+        s.close()
+    except:
+        primary_ip = "127.0.0.1"
+    
+    try:
+        # Method 2: Get all host IPs
+        _, _, ip_list = socket.gethostbyname_ex(hostname)
+        for ip in ip_list:
+            if ip not in local_ips and not ip.startswith("127."):
+                local_ips.append(ip)
+    except:
+        pass
+    
+    # Ensure localhost is included
+    if "127.0.0.1" not in local_ips:
+        local_ips.append("127.0.0.1")
+    
+    print(f"Generating certificate for IPs: {local_ips}")
+    print(f"Hostname: {hostname}")
 
     # Create certificate
     subject = issuer = x509.Name([
@@ -30,8 +55,21 @@ def generate_self_signed_cert():
         x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "CA"),
         x509.NameAttribute(NameOID.LOCALITY_NAME, "San Francisco"),
         x509.NameAttribute(NameOID.ORGANIZATION_NAME, "WebWatch"),
-        x509.NameAttribute(NameOID.COMMON_NAME, local_ip),
+        x509.NameAttribute(NameOID.COMMON_NAME, primary_ip),
     ])
+
+    # Build Subject Alternative Names
+    san_list = [
+        x509.DNSName("localhost"),
+        x509.DNSName(hostname),
+    ]
+    
+    # Add all IP addresses
+    for ip in local_ips:
+        try:
+            san_list.append(x509.IPAddress(ipaddress.ip_address(ip)))
+        except:
+            pass  # Skip invalid IPs
 
     cert = x509.CertificateBuilder().subject_name(
         subject
@@ -42,16 +80,11 @@ def generate_self_signed_cert():
     ).serial_number(
         x509.random_serial_number()
     ).not_valid_before(
-        datetime.datetime.utcnow()
+        datetime.datetime.now(datetime.UTC)
     ).not_valid_after(
-        datetime.datetime.utcnow() + datetime.timedelta(days=365)
+        datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=365)
     ).add_extension(
-        x509.SubjectAlternativeName([
-            x509.DNSName("localhost"),
-            x509.DNSName("127.0.0.1"),
-            x509.IPAddress(ipaddress.ip_address(local_ip)),
-            x509.IPAddress(ipaddress.ip_address("127.0.0.1")),
-        ]),
+        x509.SubjectAlternativeName(san_list),
         critical=False,
     ).sign(private_key, hashes.SHA256())
 
@@ -69,7 +102,8 @@ def generate_self_signed_cert():
     print("✅ SSL Certificate generated:")
     print("   - cert.pem (certificate)")
     print("   - key.pem (private key)")
-    print(f"   - Valid for: localhost, 127.0.0.1, {local_ip}")
+    print(f"   - Valid for IPs: {', '.join(local_ips)}")
+    print(f"   - Valid for hostnames: localhost, {hostname}")
 
 if __name__ == "__main__":
     generate_self_signed_cert()

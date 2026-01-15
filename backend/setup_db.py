@@ -28,9 +28,18 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             filename TEXT NOT NULL,
             camera_name TEXT NOT NULL,
+            recording_start_time TIMESTAMP,
             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    
+    # Add recording_start_time column if it doesn't exist (for existing databases)
+    try:
+        cursor.execute('ALTER TABLE recordings ADD COLUMN recording_start_time TIMESTAMP')
+        print("✅ Added recording_start_time column to existing database")
+    except sqlite3.OperationalError:
+        # Column already exists
+        pass
 
     # Add Admin User (admin / 123)
     try:
